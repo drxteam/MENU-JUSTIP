@@ -3,191 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Jastip Menu</title>
+    <title>Menu Jastip</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* CSS Sederhana & Bersih */
+        /* CSS AGAR TAMPILAN RAPI */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #f5f5f5);
-            color: var(--tg-theme-text-color, #000000);
+            font-family: sans-serif;
+            background-color: #f5f5f5; /* Warna abu muda */
             margin: 0; padding: 0;
-            padding-bottom: 80px; /* Ruang untuk floating button */
+            padding-bottom: 100px;
         }
         
         .header {
-            background-color: #ffffff;
-            padding: 15px;
+            background-color: white;
+            padding: 20px;
             text-align: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             position: sticky; top: 0; z-index: 10;
         }
-        .header h2 { margin: 0; font-size: 18px; }
-        .header p { margin: 5px 0 0; font-size: 12px; color: #666; }
+        .header h2 { margin: 0; color: #333; }
+        .header p { margin: 5px 0 0; color: #666; font-size: 14px; }
         
         .container {
-            padding: 10px;
+            padding: 15px;
             display: grid;
             grid-template-columns: 1fr 1fr; /* 2 Kolom */
-            gap: 10px;
+            gap: 15px;
         }
 
         .card {
-            background: var(--tg-theme-secondary-bg-color, #ffffff);
-            border-radius: 12px;
+            background: white;
+            border-radius: 10px;
             overflow: hidden;
-            display: flex; flex-direction: column;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex; flex-direction: column;
         }
 
         .card img {
             width: 100%; height: 120px; object-fit: cover;
-            background-color: #eee;
+            background-color: #ddd;
         }
 
         .details { padding: 10px; flex-grow: 1; display: flex; flex-direction: column; }
-        .name { font-weight: bold; font-size: 14px; margin-bottom: 5px; }
-        .price { color: #2ecc71; font-weight: bold; font-size: 14px; margin-bottom: 10px; }
+        .name { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        .price { color: #27ae60; font-weight: bold; font-size: 14px; margin-bottom: 10px; }
 
-        .counter {
-            display: flex; align-items: center; justify-content: space-between;
+        .btn-add {
             margin-top: auto;
-            background: #f0f0f0; border-radius: 8px; padding: 2px;
+            background: #3498db; color: white;
+            border: none; padding: 8px; border-radius: 5px;
+            width: 100%; font-weight: bold; cursor: pointer;
         }
-        .btn-qty {
-            width: 30px; height: 30px; border: none; background: transparent;
-            font-size: 18px; color: #333; cursor: pointer;
-        }
-        .qty-val { font-weight: bold; font-size: 14px; }
+        .btn-add:active { background: #2980b9; }
 
-        /* Floating Button Checkout */
-        .float-cart {
-            position: fixed; bottom: 10px; left: 10px; right: 10px;
-            background-color: var(--tg-theme-button-color, #3390ec);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            padding: 15px; border-radius: 12px;
+        /* Floating Cart */
+        .cart-bar {
+            position: fixed; bottom: 20px; left: 20px; right: 20px;
+            background-color: #e67e22; color: white;
+            padding: 15px; border-radius: 50px;
             display: flex; justify-content: space-between; align-items: center;
             font-weight: bold; cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            transform: translateY(150%); transition: transform 0.3s;
+            box-shadow: 0 5px 15px rgba(230, 126, 34, 0.4);
+            display: none; /* Hidden default */
         }
-        .float-cart.show { transform: translateY(0); }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>🍽️ Jastip Klojen</h2>
-        <p>Tutup PO: Jam 11.00 SIANG</p>
+        <h2>MENU JUSTIP</h2>
+        <p>Kloter Siang (Tutup 11.00)</p>
     </div>
 
-    <div class="container" id="menu-list">
-        </div>
+    <div class="container" id="menu-list"></div>
 
-    <div class="float-cart" id="checkout-btn" onclick="checkout()">
-        <span><span id="total-qty">0</span> Item</span>
-        <span>Rp <span id="total-price">0</span> &nbsp; ➝</span>
+    <div class="cart-bar" id="checkout-btn" onclick="checkout()">
+        <span id="cart-info">0 Item</span>
+        <span>Lanjut Pesan ➝</span>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand(); // Fullscreen
-
-        // --- DUMMY DATA MENU ---
+        // --- DATA MENU DUMMY ---
         const menus = [
             { id: 1, name: "Nasi Goreng Mawut", price: 15000, img: "https://via.placeholder.com/300/ff7f50/ffffff?text=Nasgor" },
-            { id: 2, name: "Ayam Geprek Sambal Ijo", price: 18000, img: "https://via.placeholder.com/300/2ecc71/ffffff?text=Geprek" },
-            { id: 3, name: "Mie Goreng Jawa", price: 15000, img: "https://via.placeholder.com/300/f1c40f/ffffff?text=Mie" },
-            { id: 4, name: "Es Teh Jumbo", price: 5000, img: "https://via.placeholder.com/300/3498db/ffffff?text=Es+Teh" },
-            { id: 5, name: "Tahu Walik (isi 5)", price: 10000, img: "https://via.placeholder.com/300/9b59b6/ffffff?text=Tahu" },
-            { id: 6, name: "Kopi Hitam", price: 4000, img: "https://via.placeholder.com/300/34495e/ffffff?text=Kopi" }
+            { id: 2, name: "Ayam Geprek", price: 18000, img: "https://via.placeholder.com/300/2ecc71/ffffff?text=Geprek" },
+            { id: 3, name: "Es Teh Jumbo", price: 5000, img: "https://via.placeholder.com/300/3498db/ffffff?text=Es+Teh" },
+            { id: 4, name: "Tahu Walik", price: 10000, img: "https://via.placeholder.com/300/9b59b6/ffffff?text=Tahu" }
         ];
 
-        let cart = {}; // Format: { id_menu: qty }
+        let cart = {};
 
+        // --- FUNGSI RENDER (MENAMPILKAN MENU) ---
         function renderMenu() {
-            const container = document.getElementById('menu-list');
-            container.innerHTML = menus.map(item => `
+            const el = document.getElementById('menu-list');
+            el.innerHTML = ""; // Bersihkan dulu
+            
+            menus.forEach(item => {
+                let qty = cart[item.id] || 0;
+                let btnText = qty > 0 ? `${qty}x (Klik utk tambah)` : "Tambah +";
+                let btnColor = qty > 0 ? "#27ae60" : "#3498db";
+
+                el.innerHTML += `
                 <div class="card">
                     <img src="${item.img}" alt="${item.name}">
                     <div class="details">
                         <div class="name">${item.name}</div>
-                        <div class="price">Rp ${item.price.toLocaleString('id-ID')}</div>
-                        <div class="counter">
-                            <button class="btn-qty" onclick="updateQty(${item.id}, -1)">−</button>
-                            <span class="qty-val" id="qty-${item.id}">0</span>
-                            <button class="btn-qty" onclick="updateQty(${item.id}, 1)">+</button>
-                        </div>
+                        <div class="price">Rp ${item.price.toLocaleString()}</div>
+                        <button class="btn-add" style="background:${btnColor}" onclick="addToCart(${item.id})">
+                            ${btnText}
+                        </button>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            });
         }
 
-        function updateQty(id, change) {
+        // --- LOGIC KERANJANG ---
+        function addToCart(id) {
             if (!cart[id]) cart[id] = 0;
-            cart[id] += change;
-            if (cart[id] < 0) cart[id] = 0;
-
-            // Update UI Angka
-            document.getElementById(`qty-${id}`).innerText = cart[id];
-            
-            // Hapus key jika 0 agar json bersih
-            if (cart[id] === 0) delete cart[id]; 
-
-            calculateTotal();
+            cart[id]++;
+            renderMenu(); // Re-render untuk update tombol
+            updateCartBar();
         }
 
-        function calculateTotal() {
-            let totalQty = 0;
+        function updateCartBar() {
+            let totalItem = 0;
             let totalPrice = 0;
-
-            for (let [id, qty] of Object.entries(cart)) {
-                let item = menus.find(m => m.id == id);
-                if(item) {
-                    totalQty += qty;
-                    totalPrice += item.price * qty;
-                }
+            for(let id in cart) {
+                let item = menus.find(x => x.id == id);
+                totalItem += cart[id];
+                totalPrice += item.price * cart[id];
             }
 
-            document.getElementById('total-qty').innerText = totalQty;
-            document.getElementById('total-price').innerText = totalPrice.toLocaleString('id-ID');
-
-            // Show/Hide Floating Button
             const btn = document.getElementById('checkout-btn');
-            if (totalQty > 0) {
-                btn.classList.add('show');
-                // Haptic Feedback (Getar dikit biar kerasa premium)
-                tg.HapticFeedback.selectionChanged(); 
+            if (totalItem > 0) {
+                btn.style.display = "flex";
+                document.getElementById('cart-info').innerText = `${totalItem} Item - Rp ${totalPrice.toLocaleString()}`;
             } else {
-                btn.classList.remove('show');
+                btn.style.display = "none";
             }
         }
 
+        // --- FUNGSI CHECKOUT (AMAN UNTUK CHROME & TELEGRAM) ---
         function checkout() {
-            // Siapkan data JSON untuk dikirim ke Bot
-            let orderData = {
-                action: "checkout_jastip",
-                items: [],
-                total: 0
-            };
-
-            for (let [id, qty] of Object.entries(cart)) {
-                let item = menus.find(m => m.id == id);
-                orderData.items.push({
-                    name: item.name,
-                    qty: qty,
-                    price: item.price,
-                    subtotal: item.price * qty
-                });
-                orderData.total += (item.price * qty);
+            let data = { type: "order", cart: cart };
+            
+            // Cek apakah di dalam Telegram?
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+                window.Telegram.WebApp.sendData(JSON.stringify(data));
+            } else {
+                // Jika di Chrome biasa, munculkan alert saja
+                alert("Data JSON yang akan dikirim ke Bot:\n" + JSON.stringify(data));
             }
-
-            // Kirim data ke Telegram
-            tg.sendData(JSON.stringify(orderData)); 
         }
 
-        // Jalankan saat load
+        // Jalankan render pertama kali
         renderMenu();
+
+        // Coba expand Telegram (pakai Try-Catch agar tidak error di Chrome)
+        try {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.expand();
+            }
+        } catch (e) {
+            console.log("Bukan di Telegram, mode browser aktif.");
+        }
     </script>
 </body>
 </html>
